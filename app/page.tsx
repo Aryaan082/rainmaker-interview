@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { getQuote } from "@/quote";
+import { getBalance } from "@/balance";
 import { USDC, WETH } from "@/tokens";
 import { BigNumber, ethers } from "ethers";
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import { useEffect, useState } from "react";
 import SwapIcon from "../public/swap.png";
 
 import "./page.css";
+import { isAddress } from "ethers/lib/utils";
 
 declare global {
   interface Window {
@@ -20,8 +22,8 @@ export default function Home() {
   const [toToken, setToToken] = useState("USDC");
   const [fromTokenValue, setFromTokenValue] = useState(0);
   const [toTokenValue, setToTokenValue] = useState(0);
-  const [fromTokenBal, setFromTokenBal] = useState(0);
-  const [toTokenBal, setToTokenBal] = useState(0);
+  const [fromTokenBal, setFromTokenBal] = useState(-1);
+  const [toTokenBal, setToTokenBal] = useState(-1);
   const [exchangeRate, setExchangeRate] = useState(0);
   const [slippage, setSlippage] = useState(0);
   const [update, setUpdate] = useState(0);
@@ -74,12 +76,50 @@ export default function Home() {
       setSlippage(quoteInfo.slippagePercent * 100);
     }
 
-    updateQuote();
+    async function updateBalance() {
+      if (ethers.utils.isAddress(walletAddress)) {
+        const WETHBalance = (
+          await getBalance(provider, WETH.address, walletAddress)
+        ).add(await provider.getBalance(walletAddress));
+        const USDCBalance = await getBalance(
+          provider,
+          USDC.address,
+          walletAddress
+        );
 
-    if (fromToken == "ETH") {
-      setFromTokenBal();
+        if (fromToken == "ETH") {
+          setFromTokenBal(
+            WETHBalance.div(
+              BigNumber.from(10).pow(WETH.decimals - 6)
+            ).toNumber() /
+              10 ** 6
+          );
+          setToTokenBal(
+            USDCBalance.div(
+              BigNumber.from(10).pow(USDC.decimals - 6)
+            ).toNumber() /
+              10 ** 6
+          );
+        } else {
+          setFromTokenBal(
+            USDCBalance.div(
+              BigNumber.from(10).pow(USDC.decimals - 6)
+            ).toNumber() /
+              10 ** 6
+          );
+          setToTokenBal(
+            WETHBalance.div(
+              BigNumber.from(10).pow(WETH.decimals - 6)
+            ).toNumber() /
+              10 ** 6
+          );
+        }
+      }
     }
-  }, [fromToken, fromTokenValue, update]);
+
+    updateQuote();
+    updateBalance();
+  }, [fromToken, fromTokenValue, update, walletAddress]);
 
   return (
     <main className="flex min-h-screen flex-col p-5">
@@ -124,7 +164,9 @@ export default function Home() {
                 onChange={(e) => handleFromTokenValueChange(e)}
               ></input>
             </div>
-            <div className="text-sm">Balance: -</div>
+            <div className="text-sm">
+              Balance: {fromTokenBal == -1 ? "-" : fromTokenBal}
+            </div>
           </div>
           <div className="flex justify-center p-5">
             <Image
@@ -155,6 +197,9 @@ export default function Home() {
               <div className="text-2xl text-white text-right">
                 {toTokenValue ? toTokenValue : "0.00"}
               </div>
+            </div>
+            <div className="text-sm">
+              Balance: {toTokenBal == -1 ? "-" : toTokenBal}
             </div>
           </div>
           <div className="flex flex-col gap-2 text-xs text-[#999cb3] py-4">

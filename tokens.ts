@@ -1,3 +1,6 @@
+import EthereumIcon from "./public/eth.svg";
+import UsdcIcon from "./public/usdc.svg";
+
 export type Token = {
   name: string;
   address: string;
@@ -5,6 +8,7 @@ export type Token = {
   decimals: number;
   coingecko: string;
   coinmarketcap: string;
+  icon: any;
 };
 
 export const USDC = {
@@ -14,6 +18,7 @@ export const USDC = {
   decimals: 6,
   coingecko: "usd-coin",
   coinmarketcap: "usd-coin",
+  icon: UsdcIcon,
 };
 
 export const ETH = {
@@ -23,6 +28,7 @@ export const ETH = {
   decimals: 18,
   coingecko: "ethereum",
   coinmarketcap: "ethereum",
+  icon: EthereumIcon,
 };
 
 export const WETH = {
@@ -32,4 +38,5 @@ export const WETH = {
   decimals: 18,
   coingecko: "weth",
   coinmarketcap: "weth",
+  icon: EthereumIcon,
 };
